@@ -1,35 +1,37 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-function RegisterPackagePage() {
+function RegisterPackagePage({ token }) {
   const [pkg, setPkg] = useState(null);
 
   async function registerPackage(name, destination, weight) {
-    const res = await fetch(
-      `http://127.0.0.1:8000/packages?name=${name}&destination=${destination}&weight=${weight}&status=pending`,
-      { method: "POST" }
-    );
+    const res = await fetch("http://127.0.0.1:8000/packages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        token: token
+      },
+      body: JSON.stringify({ name: name, destination: destination, weight: weight })
+    });
     const data = await res.json();
-    setPkg(data);
+    if (res.ok) {
+      setPkg(data);
+    }
   }
 
   return (
     <>
       <h2>Register Package</h2>
       <button onClick={() => registerPackage("Electronics Box", "Mumbai", 5.5)}>
-        Register Electronics Box (Mumbai)
+        Add Electronics Box
       </button>
       <button onClick={() => registerPackage("Medical Supplies", "Delhi", 2.0)}>
-        Register Medical Supplies (Delhi)
+        Add Medical Supplies
       </button>
 
       {pkg && (
         <div>
-          <h3>Registered Package: {pkg.name}</h3>
-          <p>ID: {pkg.id}</p>
-          <p>Destination: {pkg.destination}</p>
-          <p>Weight: {pkg.weight} kg</p>
-          <p>Status: {pkg.status}</p>
+          <p>{pkg.name} : {pkg.destination} ({pkg.status})</p>
           <Link to={`/packages/${pkg.id}`}>View Details</Link>
         </div>
       )}

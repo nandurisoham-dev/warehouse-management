@@ -1,70 +1,66 @@
-import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router'
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router';
 
-function PackageDetailPage() {
+function PackageDetailPage({ token }) {
   const { id } = useParams();
   const [pkg, setPkg] = useState(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("Loading");
 
   useEffect(() => {
     async function loadPackage() {
-      const res = await fetch(`http://127.0.0.1:8000/packages/${id}`);
+      const res = await fetch(`http://127.0.0.1:8000/packages/${id}`, {
+        headers: { token: token }
+      });
       if (res.ok) {
         const data = await res.json();
         setPkg(data);
+        setMessage("");
       } else {
         setMessage("Package not found");
       }
     }
     loadPackage();
-  }, [id]);
+  }, [id, token]);
 
   async function updateStatus() {
-    const res = await fetch(
-      `http://127.0.0.1:8000/packages/${id}?status=dispatched`,
-      { method: "PATCH" }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      setPkg(data);
-      setMessage("Status updated to dispatched");
-    }
+    const res = await fetch(`http://127.0.0.1:8000/packages/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        token: token
+      },
+      body: JSON.stringify({ status: "dispatched" })
+    });
+    const data = await res.json();
+    setPkg(data);
   }
 
   async function deletePackage() {
     const res = await fetch(`http://127.0.0.1:8000/packages/${id}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: { token: token }
     });
     const data = await res.json();
     if (res.ok) {
       setPkg(null);
-      setMessage("Package deleted");
+      setMessage("Deleted");
     } else {
       setMessage(data.detail);
     }
   }
 
-  if (!pkg) return (
-    <>
-      <Link to="/">← Back to register</Link>
-      <p>{message || "Loading ....."}</p>
-    </>
-  );
+  if (!pkg) return <p>{message}</p>;
 
   return (
     <>
-      <Link to="/">← Back to register</Link>
       <h2>{pkg.name}</h2>
-      <p>ID: {pkg.id}</p>
       <p>Destination: {pkg.destination}</p>
       <p>Weight: {pkg.weight} kg</p>
-      <p>Arrival Date: {pkg.arrival_date}</p>
       <p>Status: {pkg.status}</p>
 
-      <button onClick={updateStatus}>Mark as Dispatched</button>
-      <button onClick={deletePackage}>Delete Package</button>
-
-      {message && <p>{message}</p>}
+      <button onClick={updateStatus}>Dispatch</button>
+      <button onClick={deletePackage}>Delete</button>
+      <p>{message}</p>
     </>
   );
 }
